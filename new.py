@@ -35,16 +35,6 @@ def phi(x: float) -> float:
 
 i = 3
 
-# print("Grid on level l omega_l: ", omega_l)
-# print("Level l: ", l)
-# print("current index i", i)
-# print("Grid spacing on l: ", h_l)
-# print("Gridpoint indices on level l: ", I_l)
-# print("x position of grid point on level 2 at index 3: ", x_li(2, 3))
-#
-
-# Plot the base functions for level l
-
 
 def phi_li(x: float, l: int, i: int, h_l: float) -> float:
     """
@@ -64,17 +54,6 @@ def phi_li(x: float, l: int, i: int, h_l: float) -> float:
 
 assert phi_li(0.75, 2, 3, h_l) == 1.0
 assert phi_li(1, 2, 3, h_l) == 0.0
-
-
-# for k in range(l):
-#     n = 2**k
-#     x_coords = np.array([x_li(k, i) for i in range(n)])
-#     print("Level: ", k)
-#     print("Number of grid points: ", n)
-#     print("Coords: ", x_coords)
-#
-#     # Evaluate function at all gridpoints in level l
-#     # y_l = [phi_li(x_coords, k,) for i in range()]
 
 
 def f(x: np.float64 | np.ndarray | float) -> np.float64 | np.ndarray:
