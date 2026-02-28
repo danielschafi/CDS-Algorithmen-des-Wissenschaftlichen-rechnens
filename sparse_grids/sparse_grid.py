@@ -67,15 +67,9 @@ class SparseGrid:
 
         for k in range(1, self.l):
             I_k = self.indices_of_funcs_on_k(k)
-            num_base_funcs = len(I_k)
-            print(num_base_funcs)
-            splits = np.array_split(
-                np.array(list(range(2**self.l + 1))), num_base_funcs
-            )
 
-            # Only calculate the base functions on the points where they are not zero, which is on the support of the base function.
-            for split, base_func_idx in zip(splits, I_k):
-                for i in split:
+            for base_func_idx in I_k:
+                for i in range(2**self.l + 1):
                     self.base_function_values[k, i] = self.phi_li(
                         float(x_l[i]), k, base_func_idx, self.h[k]
                     )
@@ -95,6 +89,6 @@ class SparseGrid:
         plt.show()
 
 
-sg = SparseGrid(4)
+sg = SparseGrid(2)
 sg.calculate_base_functions()
 sg.visualize_base_functions()
