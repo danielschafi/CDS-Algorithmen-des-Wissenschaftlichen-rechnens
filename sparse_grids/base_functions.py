@@ -12,6 +12,9 @@ h_l: float = 2 ** (-l)
 I_l: list = list(range(2**l))  # Gridpoint indices   i \in {0,1,..., 2**l}
 
 
+i = 3
+
+
 def x_li(l: int, i: int) -> float:
     """x coordinate of gridpoint at index i on level l"""
     return i * 2 ** (-l)  # Value of function at gridpoints
@@ -31,9 +34,6 @@ def phi(x: float) -> float:
         return 1 - abs(x)
     else:
         return 0
-
-
-i = 3
 
 
 def phi_li(x: float, l: int, i: int, h_l: float) -> float:
@@ -87,8 +87,8 @@ def u(x: float) -> float:
     return y_pred[-1, :]
 
 
-def u2(x):
-    plt.title("Hierarchical approximation")
+def base_functions(x):
+    plt.title("Base functions")
     plt.xlim(0, 1)
     I_l = [i for i in range(2**l)]
 
@@ -112,7 +112,7 @@ def u2(x):
         plt.plot(x_coords, y_coords, label=rf"$W_{k}$")
 
 
-result = u2(0.5)
+result = u(0.5)
 x_coords = np.linspace(x_min, x_max, 100)
 
 y_fx = f(x_coords)
