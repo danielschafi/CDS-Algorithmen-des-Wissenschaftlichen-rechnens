@@ -1,23 +1,23 @@
+from typing import Callable
+
 import matplotlib.pyplot as plt
 import numpy as np
 
 
-class SparseGrid:
+class SparseGrids1d:
     def __init__(self, l: int):
         self.l: int = l  # Total layer count
 
         self.levels = list(range(1, self.l + 1))
-        print(f"levels: {self.levels}")
         # Grid spacing per level
         self.h = np.array(
             [2 ** (-k) for k in range(self.l + 1)]
         )  # get grid spacing for levels 0 to l, we will only use levels 1 to l, but this way we have the correct index for h[k]
-        print(f"Grid spacing per level: {self.h}")
         # Base function values.
         self.base_function_values = np.zeros((self.l + 1, 2**self.l + 1))
 
-        print(f"Base function values shape: {self.base_function_values.shape}")
-        print(self.base_function_values)
+        # X points on finest grid
+        self.x_l = np.linspace(0, 1, 2**self.l + 1)
 
     def x_li(self, l: int, i: int) -> float:
         """x coordinate of gridpoint at index i on level l"""
@@ -61,39 +61,96 @@ class SparseGrid:
         """
         return [i for i in range(1, 2**k) if i % 2 == 1]
 
-    def calculate_base_functions(self):
+    def calculate_base_functions(self) -> None:
         """
         Builds the base functions for all levels and saves the values at the resolution of the finest level.
         """
-
-        x_l = np.linspace(0, 1, 2**self.l + 1)
-
         for k in self.levels:
             I_k = self.indices_of_funcs_on_k(k)
-            print(I_k)
 
             for base_func_idx in I_k:
-                for i in range(len(x_l)):
+                for i in range(len(self.x_l)):
                     self.base_function_values[k, i] += self.phi_li(
-                        float(x_l[i]), k, base_func_idx
+                        float(self.x_l[i]), k, base_func_idx
                     )
 
-    def visualize_base_functions(self):
+    def visualize_base_functions(self) -> None:
         """
         Plots the base functions on different levels.
         """
-        print(self.base_function_values)
-        plt.title("Base functions on different levels")
+        plt.title(f"Base functions of levels 1-{self.l}")
         for k in self.levels:
             plt.plot(
-                np.linspace(0, 1, 2**self.l + 1),
+                self.x_l,
                 self.base_function_values[k],
                 label=rf"$W_{k}$",
             )
         plt.legend()
         plt.show()
 
+    def calc_idx_on_level_l(self, k: int, index: int) -> int:
+        """Takes a index on level k and calculates the corresponding index on the finest level l"""
+        return int(self.x_li(k, index) / self.h[self.l])
 
-sg = SparseGrid(4)
+    def alpha_ki(self, base_func_idx, f: Callable, k):
+        real = f(self.x_li(k, base_func_idx))
+        before = f(self.x_li(k, base_func_idx) - self.h[k])
+        after = f(self.x_li(k, base_func_idx) + self.h[k])
+        interpolation = (before + after) / 2
+
+        return f(self.x_li(k, base_func_idx)) - (
+            (
+                f(self.x_li(k, base_func_idx) - self.h[k])
+                + f(self.x_li(k, base_func_idx) + self.h[k])
+            )
+            / 2
+        )
+
+    def plot_alpha_scaled_base_funcs(self, base_func_idx, index, k):
+        # plotting
+        start = self.calc_idx_on_level_l(k, base_func_idx - 1)
+        stop = self.calc_idx_on_level_l(k, base_func_idx + 1)
+        plt.arrow(self.x_li(k, base_func_idx), 0, 0, self.alpha[k, index])
+        plt.plot(
+            self.x_l[start : stop + 1],
+            self.alpha[k, index] * self.base_function_values[k][start : stop + 1],
+            label=rf"$\alpha_{{{k},{base_func_idx}}} \cdot W_{k}$",
+        )
+
+    def function_approximation(self, f: Callable):
+        # 1. get real values of f at the grid points of the finest level
+        f_vals = [f(x) for x in self.x_l]
+        plt.plot(self.x_l, f_vals, label="f(x)", color="black", linewidth=2)
+
+        self.alpha = np.zeros((self.l + 1, 2**self.l + 1))
+
+        # 2. Calculate hierarchical surpluses alpha_ki
+        for k in self.levels:
+            I_k = self.indices_of_funcs_on_k(k)
+            for base_func_idx in I_k:
+                index = self.calc_idx_on_level_l(k, base_func_idx)
+                self.alpha[k, index] = self.alpha_ki(base_func_idx, f, k)
+
+                self.plot_alpha_scaled_base_funcs(base_func_idx, index, k)
+
+        plt.legend()
+        plt.grid()
+        plt.show()
+
+        print("Hierarchical surpluses alpha_ki:\n", self.alpha)
+
+    def alpha_heatmap(self):
+        plt.imshow(self.alpha, aspect="auto")
+        plt.colorbar(label=r"$\alpha_{k,i}$")
+        plt.xlabel("Index i on finest level l")
+        plt.ylabel("Level k")
+        plt.title("Hierarchical surpluses alpha_ki")
+        plt.show()
+
+
+sg = SparseGrids1d(4)
 sg.calculate_base_functions()
-sg.visualize_base_functions()
+# sg.visualize_base_functions()
+sg.function_approximation(lambda x: np.sin(2 * np.pi * x))
+
+sg.alpha_heatmap()
