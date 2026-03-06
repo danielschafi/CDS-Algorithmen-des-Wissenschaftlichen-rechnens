@@ -2,9 +2,10 @@ from typing import Callable
 
 import matplotlib.pyplot as plt
 import numpy as np
+from mpl_toolkits.mplot3d import Axes3D
 
 
-class SparseGrids1d:
+class SparseGrid2d:
     def __init__(self, l: int):
         self.l: int = l  # Total layer count
 
@@ -14,7 +15,8 @@ class SparseGrids1d:
             [2 ** (-k) for k in range(self.l + 1)]
         )  # get grid spacing for levels 0 to l, we will only use levels 1 to l, but this way we have the correct index for h[k]
         # Base function values.
-        self.base_function_values = np.zeros((self.l + 1, 2**self.l + 1))
+        self.base_function_values = np.zeros((self.l + 1, 2**self.l + 1, 2**self.l + 1))
+        self.base_function_values_1d = np.zeros((self.l + 1, 2**self.l + 1))
 
         # X points on finest grid
         self.x_l = np.linspace(0, 1, 2**self.l + 1)
@@ -70,11 +72,29 @@ class SparseGrids1d:
 
             for base_func_idx in I_k:
                 for i in range(len(self.x_l)):
-                    self.base_function_values[k, i] += self.phi_li(
+                    self.base_function_values_1d[k, i] += self.phi_li(
                         float(self.x_l[i]), k, base_func_idx
                     )
 
-    def visualize_base_functions(self) -> None:
+            # Tenorrproduct w_k1,w_k2 from w_k1 and w_k2
+            self.base_function_values[k] = np.tensordot(
+                self.base_function_values_1d[k], self.base_function_values_1d[k], axes=0
+            )
+
+    def visualize_base_functions_values_2d(self) -> None:
+        """
+        Plots the base functions on different levels for 2d
+        """
+
+        X, Y = np.meshgrid(self.x_l, self.x_l)
+        fig = plt.figure()
+        ax = fig.add_subplot(111, projection="3d")
+        surf = ax.plot_surface(X, Y, self.base_function_values[self.l], alpha=0.8)
+        fig.colorbar(surf)
+        plt.title(f"Base functions of levels 1-{self.l}")
+        plt.show()
+
+    def visualize_base_function_values_1d(self) -> None:
         """
         Plots the base functions on different levels.
         """
@@ -82,7 +102,7 @@ class SparseGrids1d:
         for k in self.levels:
             plt.plot(
                 self.x_l,
-                self.base_function_values[k],
+                self.base_function_values_1d[k],
                 label=rf"$W_{k}$",
             )
         plt.legend()
@@ -141,9 +161,11 @@ class SparseGrids1d:
         plt.show()
 
 
-sg = SparseGrids1d(4)
+sg = SparseGrid2d(2)
 sg.calculate_base_functions()
 # sg.visualize_base_functions()
-sg.function_approximation(lambda x: np.sin(2 * np.pi * x))
+# sg.function_approximation(lambda x: np.sin(2 * np.pi * x))
 
-sg.alpha_heatmap()
+# sg.alpha_heatmap()
+#
+sg.visualize_base_functions_values_2d()
