@@ -231,29 +231,84 @@ class SparseGridNd:
 
         return result
 
+    ################################################
+    ###############     Plotting    ################
+    ################################################
+
+    def plot(self, f: Callable) -> None:
+        """Plot function, approximation, and error for 1D or 2D cases."""
+        if self.dim == 1:
+            self._plot_1d(f)
+        elif self.dim == 2:
+            self._plot_2d(f)
+        else:
+            raise NotImplementedError("Plotting only supported for 1D and 2D")
+
+    def _plot_1d(self, f: Callable) -> None:
+        x = np.linspace(0, 1, 300)
+        f_exact = np.array([f(xi) for xi in x])
+        f_approx = np.array([self.evaluate([xi]) for xi in x])
+        error = np.abs(f_exact - f_approx)
+
+        fig, axes = plt.subplots(1, 3, figsize=(15, 4))
+        fig.suptitle(f"Sparse Grid Approximation (dim=1, depth={self.l})")
+
+        axes[0].plot(x, f_exact, label="f(x)")
+        axes[0].set_title("Exact function")
+        axes[0].legend()
+
+        axes[1].plot(x, f_approx, label="approx(x)", color="orange")
+        axes[1].plot(x, f_exact, label="f(x)", linestyle="--", alpha=0.5)
+        axes[1].set_title("Approximation")
+        axes[1].legend()
+
+        axes[2].plot(x, error, color="red", label="|error|")
+        axes[2].set_title(f"Pointwise error (max={error.max():.2e})")
+        axes[2].legend()
+
+        plt.tight_layout()
+        plt.show()
+
+    def _plot_2d(self, f: Callable) -> None:
+        n = 60
+        x = np.linspace(0, 1, n)
+        X, Y = np.meshgrid(x, x)
+
+        f_exact = np.vectorize(f)(X, Y)
+        f_approx = np.array(
+            [[self.evaluate([X[i, j], Y[i, j]]) for j in range(n)] for i in range(n)]
+        )
+        error = np.abs(f_exact - f_approx)
+
+        fig, axes = plt.subplots(1, 3, figsize=(18, 5), subplot_kw={"projection": "3d"})
+        fig.suptitle(f"Sparse Grid Approximation (dim=2, depth={self.l})")
+
+        axes[0].plot_surface(X, Y, f_exact, cmap="viridis", alpha=0.9)
+        axes[0].set_title("Exact function")
+
+        axes[1].plot_surface(X, Y, f_approx, cmap="plasma", alpha=0.9)
+        axes[1].set_title("Approximation")
+
+        surf = axes[2].plot_surface(X, Y, error, cmap="Reds", alpha=0.9)
+        axes[2].set_title(f"Pointwise error (max={error.max():.2e})")
+        fig.colorbar(surf, ax=axes[2], shrink=0.5)
+
+        plt.tight_layout()
+        plt.show()
+
 
 def main():
-    dim = 2
-    sg = SparseGridNd(depth=3, dimension=dim)
-    sg.calculate_base_functions()
-
-    # sg.visualize_base_function_values()
-    # print(sg.base_function_values)
     def d1(x):
         return np.sin(2 * np.pi * x)
 
     def d2(x, y):
         return np.sin(2 * np.pi * x) * np.sin(2 * np.pi * y)
 
-    def d3(x, y, z):
-        return np.sin(2 * np.pi * x) * np.sin(2 * np.pi * y) * np.sin(2 * np.pi * z)
-
-    funcs = [d1, d2, d3]
-
-    sg.alpha_ki(funcs[dim - 1], 2, [2] * dim)
-
-    sg.function_approximation(funcs[dim - 1])
-    sg.evaluate([2] * dim)
+    for dim, f in [(1, d1), (2, d2)]:
+        sg = SparseGridNd(depth=4, dimension=dim)
+        sg.calculate_base_functions()
+        sg.function_approximation(f)
+        sg.plot(f)
 
 
 if __name__ == "__main__":
