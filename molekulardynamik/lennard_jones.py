@@ -1,3 +1,4 @@
+import matplotlib.pyplot as plt
 import numpy as np
 
 
@@ -16,9 +17,6 @@ def lj(r_ij, epsilon, sigma):
     else:
         print("dfgd")
         return 0
-
-
-import matplotlib.pyplot as plt
 
 
 def main():
