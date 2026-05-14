@@ -2,7 +2,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 from matplotlib.lines import Line2D
 
-rng = np.random.default_rng(42)
+rng = np.random.default_rng()
 
 # Parameters
 EPSILON = 1
@@ -140,6 +140,9 @@ def find_neighbours(grid):
                     candidates.extend(grid[col + 1][row + 1])
             if row + 1 <= N_TOTAL - 1:
                 candidates.extend(grid[col][row + 1])
+
+                if col - 1 >= 0:
+                    candidates.extend(grid[col - 1][row + 1])
 
             candidates.extend(grid[col][row])
             for particle in grid[col][row]:
