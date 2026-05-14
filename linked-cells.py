@@ -191,6 +191,7 @@ def plot_grid_with_particles(grid, pairs=None):
     ax.set_yticks(ticks)
     ax.set_aspect("equal")
     plt.tight_layout()
+    # plt.savefig("linked-with-neighbours.png")
     plt.show()
 
 
